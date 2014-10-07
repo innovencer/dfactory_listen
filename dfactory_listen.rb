@@ -4,8 +4,8 @@ require 'bundler'
 Bundler.require(:default)
 
 listen_directory = ARGV[0] || "/home/datafactory"
-FIXTURE_PATH = "/webhooks/datafactory/fixture"
-DOMAINS = ["http://golazzos.com", "http://golazzos.ngrok.com"]
+FIXTURE_PATH = "/webhooks/data_factory/fixture"
+DOMAINS = ["http://golazzos.com", "http://golazzos.ngrok.com", "http://qa.golazzos.com", "http://build.golazzos.com"]
 
 if File.exists? listen_directory
   listener = Listen.to(listen_directory) do |modified, added, removed|
