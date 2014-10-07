@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 
-require 'daemons'
+require 'bundler'
+Bundler.require(:default)
 
 Daemons.run('dfactory_listen.rb')
