@@ -9,11 +9,11 @@ DOMAINS = ["http://golazzos.com", "http://golazzos.ngrok.com"]
 
 if File.exists? listen_directory
   listener = Listen.to(listen_directory) do |modified, added, removed|
-    files = modified.concat(added).select{|f| f.include? "fixture"}
+    files = modified.concat(added).select{|f| f.include? "fixture"}.uniq
     DOMAINS.each do |domain|
       url = domain + FIXTURE_PATH
       files.each do |file|
-        Typhoeus.post(url, body: {fixture: file})
+        Typhoeus.post(url, body: {fixture: File.open(file, "r")})
       end
     end
   end
