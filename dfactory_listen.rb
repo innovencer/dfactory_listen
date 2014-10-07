@@ -13,7 +13,8 @@ if File.exists? listen_directory
     DOMAINS.each do |domain|
       url = domain + FIXTURE_PATH
       files.each do |file|
-        Typhoeus.post(url, body: {fixture: File.open(file, "r")})
+        # Typhoeus.post(url, body: {fixture: File.open(file, "r")})
+        Typhoeus.post(url, body: {fixture: file})
       end
     end
   end
