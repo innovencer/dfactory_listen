@@ -14,7 +14,7 @@ begin
       url = domain + FIXTURE_PATH
       files.each do |file|
         # Typhoeus.post(url, body: {fixture: File.open(file, "r")})
-        Typhoeus.post(url, body: {fixture: File.basename(file)})
+        Typhoeus.post(url, body: File.basename(file))
       end
     end
   end
