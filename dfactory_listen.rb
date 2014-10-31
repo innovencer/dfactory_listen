@@ -5,7 +5,7 @@ Bundler.require(:default)
 
 listen_directory = ARGV[0] || "/home/datafactory"
 FIXTURE_PATH = "/webhooks/data_factory/fixture"
-DOMAINS = ["http://golazzos.com", "http://golazzos.ngrok.com", "http://qa.golazzos.com", "http://build.golazzos.com"]
+DOMAINS = ["https://golazzos.com", "http://golazzos.ngrok.com", "http://qa.golazzos.com", "http://build.golazzos.com"]
 
 begin
   listener = Listen.to(listen_directory) do |modified, added, removed|
@@ -14,7 +14,12 @@ begin
       url = domain + FIXTURE_PATH
       files.each do |file|
         # Typhoeus.post(url, body: {fixture: File.open(file, "r")})
-        Typhoeus.post(url, body: File.basename(file))
+
+        params = { body: File.basename(file) }
+        params.merge!(ssl_verifyhost: 2) if url.include?("https")
+
+        response = Typhoeus.post(url, params)
+        puts "POST to #{url} => #{params} #{response.code}"
       end
     end
   end
