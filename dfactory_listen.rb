@@ -28,10 +28,9 @@ listen_directory = options.directory
 FIXTURE_PATH = "/webhooks/data_factory/ficha"
 
 if options.local
-  DOMAINS = ["http://localhost:3000"]
+  DOMAINS = %w(http://localhost:3000)
 else
-  DOMAINS = ["https://golazzos.com", "http://golazzos.ngrok.com",
-             "http://qa.golazzos.com", "http://build.golazzos.com", "http://pdn.golazzos.com.mx"]
+  DOMAINS = %w(https://golazzos.com https://build.golazzos.com http://golazzos.ngrok.io)
 end
 
 begin
