@@ -5,8 +5,7 @@ Bundler.require(:default)
 
 listen_directory = ARGV[0] || "/home/datafactory/xml/es"
 FIXTURE_PATH = "/webhooks/data_factory/fixture"
-DOMAINS = ["https://golazzos.com", "http://golazzos.ngrok.com",
-           "http://qa.golazzos.com", "http://build.golazzos.com", "http://pdn.golazzos.com.mx"]
+DOMAINS = %w(https://golazzos.com https://build.golazzos.com http://golazzos.ngrok.io)
 
 begin
   listener = Listen.to(listen_directory) do |modified, added, removed|
