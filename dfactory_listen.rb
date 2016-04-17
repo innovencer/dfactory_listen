@@ -3,10 +3,19 @@
 require 'optparse'
 require 'ostruct'
 require 'bundler'
+require 'logger'
 Bundler.require(:default)
 
-options = OpenStruct.new(directory: '/home/datafactory/xml/es')
+FIXTURE_PATH = "/webhooks/data_factory/ficha"
 
+def get_domains(options)
+  domains = %w(https://golazzos.com https://build.golazzos.com http://golazzos.ngrok.io)
+  domains = %w(http://localhost:3000) if options.local
+  domains = [options.vm_host] if options.vm_host
+  domains
+end
+
+options = OpenStruct.new(directory: '/home/datafactory/xml/es')
 OptionParser.new do |opts|
   opts.banner = "Usage: dfactory_listen [options]"
 
@@ -18,37 +27,37 @@ OptionParser.new do |opts|
     options.local = true
   end
 
+  opts.on("-vm_host", "--vm_host=VM_HOST", "Use with the virtual machine") do |vm_host|
+    options.vm_host = vm_host
+  end
+
   opts.on("-h", "--help", "Prints this help") do
     puts opts
     exit
   end
 end.parse!
 
-listen_directory = options.directory
-FIXTURE_PATH = "/webhooks/data_factory/ficha"
+log_path = File.join File.dirname(__FILE__), 'logs', 'log'
+logger = Logger.new log_path, 'daily'
+domains = get_domains options
+listener = Listen.to options.directory do |modified, added, removed|
+  files = modified.select{|f| f.include? "ficha"}.uniq
+  domains.each do |domain|
+    url = domain + FIXTURE_PATH
+    files.each do |file|
+      params = { ficha: File.basename(file) }
+      params.merge!(ssl_verifyhost: 2) if url.include?("https")
 
-if options.local
-  DOMAINS = %w(http://localhost:3000)
-else
-  DOMAINS = %w(https://golazzos.com https://build.golazzos.com http://golazzos.ngrok.io)
-end
-
-begin
-  listener = Listen.to(listen_directory) do |modified, added, removed|
-    files = modified.concat(added).select{|f| f.include? "ficha"}.uniq
-    DOMAINS.each do |domain|
-      url = domain + FIXTURE_PATH
-      files.each do |file|
-        params = { ficha: File.basename(file) }
-        params.merge!(ssl_verifyhost: 2) if url.include?("https")
-
+      begin
         response = Typhoeus.post(url, body: params)
-        puts "POST to #{url} => #{params} #{response.code}"
+        logger.info "POST to #{url} => #{params} #{response.code}"
+      rescue StandardError => e
+        logger.error e.message
       end
     end
   end
-  listener.start
-  sleep
-rescue => err
-  puts err
 end
+
+logger.info "=== dfactory_listen listening to changes in #{options.directory}!!! ==="
+listener.start
+sleep

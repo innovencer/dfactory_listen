@@ -22,13 +22,7 @@ $ ./dflistener_control.rb start
 Es posible iniciar el proceso para que escuche cambios en un directorio específico:
 
 ```
-$ ./dflistener_control.rb start -- /path/a/esuchar
-```
-
-Para iniciar el proceso sin "daemonizarlo", de manera que se puedan ver STDOUT:
-
-```
-$ ./dflistener_control.rb run -- /path/a/esuchar
+$ ./dflistener_control.rb start -- -d /path/a/esuchar
 ```
 
 * Para detener el proceso:
