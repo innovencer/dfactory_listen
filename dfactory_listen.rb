@@ -41,21 +41,25 @@ log_path = File.join File.dirname(__FILE__), 'logs', 'log'
 logger = Logger.new log_path, 'daily'
 domains = get_domains options
 listener = Listen.to options.directory do |modified, added, removed|
+  hydra = Typhoeus::Hydra.new
   files = modified.select{|f| f.include? "ficha"}.uniq
   domains.each do |domain|
     url = domain + FIXTURE_PATH
     files.each do |file|
       params = { ficha: File.basename(file) }
       params.merge!(ssl_verifyhost: 2) if url.include?("https")
-
-      begin
-        response = Typhoeus.post(url, body: params)
-        logger.info "POST to #{url} => #{params} #{response.code}"
-      rescue StandardError => e
-        logger.error e.message
+      request = Typhoeus::Request.new url, method: :post, body: params
+      request.on_complete do |response|
+        if response.code.to_s =~ /^2/
+          logger.info "Send POST to #{url} => #{params} #{response.code}"
+        else
+          logger.error "Error sending POST to #{url} => #{params} #{response.code}"
+        end
       end
+      hydra.queue(request)
     end
   end
+  hydra.run
 end
 
 logger.info "=== dfactory_listen listening to changes in #{options.directory}!!! ==="
