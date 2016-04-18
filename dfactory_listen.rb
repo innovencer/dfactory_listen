@@ -6,7 +6,8 @@ require 'bundler'
 require 'logger'
 Bundler.require(:default)
 
-FIXTURE_PATH = "/webhooks/data_factory/ficha"
+CARD_PATH = "/webhooks/data_factory/card"
+FIXTURE_PATH = "/webhooks/data_factory/fixture"
 
 def get_domains(options)
   domains = %w(https://golazzos.com https://build.golazzos.com http://golazzos.ngrok.io)
@@ -40,28 +41,38 @@ end.parse!
 log_path = File.join File.dirname(__FILE__), 'logs', 'log'
 logger = Logger.new log_path, 'daily'
 domains = get_domains options
-listener = Listen.to options.directory do |modified, added, removed|
-  hydra = Typhoeus::Hydra.new
-  files = modified.select{|f| f.include? "ficha"}.uniq
-  domains.each do |domain|
-    url = domain + FIXTURE_PATH
-    files.each do |file|
-      params = { ficha: File.basename(file) }
-      params.merge!(ssl_verifyhost: 2) if url.include?("https")
-      request = Typhoeus::Request.new url, method: :post, body: params
-      request.on_complete do |response|
-        if response.code.to_s =~ /^2/
-          logger.info "Send POST to #{url} => #{params} #{response.code}"
-        else
-          logger.error "Error sending POST to #{url} => #{params} #{response.code}"
+
+listener = Listen.to options.directory, only: %r{ficha|fixture} do |modified, added, removed|
+  begin
+    hydra = Typhoeus::Hydra.new
+    files = modified + added
+    domains.each do |domain|
+      files.each do |file|
+        if file =~ /ficha/
+          url = domain + CARD_PATH
+          params = { card: File.basename(file) }
+        elsif file =~ /fixture/
+          url = domain + FIXTURE_PATH
+          params = { body: File.basename(file) }
         end
+        params.merge!(ssl_verifyhost: 2) if url.include?("https")
+        request = Typhoeus::Request.new url, method: :post, body: params
+        request.on_complete do |response|
+          if response.code.to_s =~ /^2/
+            logger.info "Send POST to #{url} => #{params} #{response.code}"
+          else
+            logger.error "Error sending POST to #{url} => #{params} #{response.code}"
+          end
+        end
+        hydra.queue(request)
       end
-      hydra.queue(request)
     end
+    hydra.run
+  rescue StandardError => e
+    logger.error e.message
   end
-  hydra.run
 end
 
-logger.info "=== dfactory_listen listening to changes in #{options.directory}!!! ==="
+logger.info "=== Notifiying changes in #{options.directory} to #{domains}!!! ==="
 listener.start
 sleep
