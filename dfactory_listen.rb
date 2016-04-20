@@ -10,7 +10,7 @@ CARD_PATH = "/webhooks/data_factory/card"
 FIXTURE_PATH = "/webhooks/data_factory/fixture"
 
 def get_domains(options)
-  domains = %w(https://golazzos.com https://build.golazzos.com http://golazzos.ngrok.io)
+  domains = %w(https://golazzos.com https://build.golazzos.com)
   domains = %w(http://localhost:3000) if options.local
   domains = [options.vm_host] if options.vm_host
   domains
