@@ -42,19 +42,14 @@ log_path = File.join File.dirname(__FILE__), 'logs', 'log'
 logger = Logger.new log_path, 'daily'
 domains = get_domains options
 
-listener = Listen.to options.directory, only: %r{ficha|fixture} do |modified, added, removed|
+listener = Listen.to options.directory, only: %r{fixture} do |modified, added, removed|
   begin
     hydra = Typhoeus::Hydra.new
     files = modified + added
     domains.each do |domain|
       files.each do |file|
-        if file =~ /ficha/
-          url = domain + CARD_PATH
-          params = { card: File.basename(file) }
-        elsif file =~ /fixture/
-          url = domain + FIXTURE_PATH
-          params = { body: File.basename(file) }
-        end
+        url = domain + FIXTURE_PATH
+        params = { body: File.basename(file) }
         params.merge!(ssl_verifyhost: 2) if url.include?("https")
         request = Typhoeus::Request.new url, method: :post, body: params
         request.on_complete do |response|
